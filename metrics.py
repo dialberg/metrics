@@ -1,7 +1,7 @@
 import numpy as np
 
 
-class AccuracyMeasures:
+class ClassificationMeasures:
     """Classification accuracy measures for binary or multiclass labels."""
 
     def __init__(self, y_true, y_pred):
@@ -270,7 +270,7 @@ if __name__ == "__main__":
     actual_classes = ["cat", "dog", "cat", "bird", "dog"]
     predicted_classes = ["cat", "cat", "cat", "bird", "dog"]
 
-    classification_metrics = AccuracyMeasures(actual_classes, predicted_classes)
+    classification_metrics = ClassificationMeasures(actual_classes, predicted_classes)
     print(classification_metrics.report())
 
     actual_values = [3, -0.5, 2, 7]
