@@ -20,12 +20,15 @@ class ClassificationMeasures:
             raise ValueError("y_true and y_pred cannot be empty")
 
     def accuracy(self):
+        """Use when every class has similar importance and the dataset is balanced."""
         return float(np.mean(self.y_true == self.y_pred))
 
     def error_rate(self):
+        """Use as the complement of accuracy when mistakes are easier to reason about."""
         return 1 - self.accuracy()
 
     def confusion_matrix(self):
+        """Use to inspect which true classes are confused with which predicted classes."""
         matrix = {
             true: {pred: 0 for pred in self.labels}
             for true in self.labels
@@ -39,46 +42,56 @@ class ClassificationMeasures:
         return matrix
 
     def true_positives(self, label):
+        """Use for one-vs-rest analysis: correct predictions of the selected label."""
         return int(np.sum((self.y_true == label) & (self.y_pred == label)))
 
     def false_positives(self, label):
+        """Use for one-vs-rest analysis: other labels incorrectly predicted as this label."""
         return int(np.sum((self.y_true != label) & (self.y_pred == label)))
 
     def false_negatives(self, label):
+        """Use for one-vs-rest analysis: selected-label examples missed by the model."""
         return int(np.sum((self.y_true == label) & (self.y_pred != label)))
 
     def true_negatives(self, label):
+        """Use for one-vs-rest analysis: non-label examples correctly rejected."""
         return int(np.sum((self.y_true != label) & (self.y_pred != label)))
 
     def precision(self, label):
+        """Use when false positives are costly, such as spam flags or fraud alerts."""
         tp = self.true_positives(label)
         fp = self.false_positives(label)
         denominator = tp + fp
         return tp / denominator if denominator else 0
 
     def recall(self, label):
+        """Use when false negatives are costly, such as medical screening or risk detection."""
         tp = self.true_positives(label)
         fn = self.false_negatives(label)
         denominator = tp + fn
         return tp / denominator if denominator else 0
 
     def specificity(self, label):
+        """Use when correctly rejecting non-label cases matters for a selected class."""
         tn = self.true_negatives(label)
         fp = self.false_positives(label)
         denominator = tn + fp
         return tn / denominator if denominator else 0
 
     def f1_score(self, label):
+        """Use when precision and recall both matter and classes may be imbalanced."""
         precision = self.precision(label)
         recall = self.recall(label)
         denominator = precision + recall
         return 2 * precision * recall / denominator if denominator else 0
 
     def balanced_accuracy(self):
+        """Use instead of accuracy when classes are imbalanced."""
         recalls = [self.recall(label) for label in self.labels]
         return float(np.mean(recalls))
 
     def report(self):
+        """Use to get a compact summary of common classification metrics."""
         return {
             "accuracy": self.accuracy(),
             "error_rate": self.error_rate(),
@@ -111,35 +124,44 @@ class RegressionMeasures:
             raise ValueError("y_true and y_pred cannot be empty")
 
     def errors(self):
+        """Use to inspect signed residuals and detect systematic over- or under-prediction."""
         return self.y_true - self.y_pred
 
     def absolute_errors(self):
+        """Use when only error magnitude matters, not direction."""
         return np.abs(self.errors())
 
     def squared_errors(self):
+        """Use when larger errors should be penalized more heavily than small errors."""
         return np.square(self.errors())
 
     # mae
     def mean_absolute_error(self):
+        """Use as a robust, easy-to-read average error in the target's original units."""
         return float(np.mean(self.absolute_errors()))
 
     # mse
     def mean_squared_error(self):
+        """Use when large errors should dominate the score; units are squared."""
         return float(np.mean(self.squared_errors()))
 
     # rmse
     def root_mean_squared_error(self):
+        """Use like MSE when you want the result back in the target's original units."""
         return float(np.sqrt(self.mean_squared_error()))
 
     # mdae
     def median_absolute_error(self):
+        """Use when outliers exist and a typical absolute error is more useful than a mean."""
         return float(np.median(self.absolute_errors()))
 
     def max_error(self):
+        """Use when worst-case prediction error is important."""
         return float(np.max(self.absolute_errors()))
 
     # mape
     def mean_absolute_percentage_error(self):
+        """Use for relative error when true values are positive and far from zero."""
         non_zero_mask = self.y_true != 0
 
         if not np.any(non_zero_mask):
@@ -153,6 +175,7 @@ class RegressionMeasures:
 
     # smape
     def symmetric_mean_absolute_percentage_error(self):
+        """Use for relative error when predictions and true values may have different scales."""
         denominator = np.abs(self.y_true) + np.abs(self.y_pred)
         non_zero_mask = denominator != 0
 
@@ -167,6 +190,7 @@ class RegressionMeasures:
         return float(np.mean(percentages))
 
     def r2_score(self):
+        """Use to measure variance explained by the model against a mean baseline."""
         total_sum_squares = np.sum(np.square(self.y_true - np.mean(self.y_true)))
 
         if total_sum_squares == 0:
@@ -175,6 +199,7 @@ class RegressionMeasures:
         return float(1 - (np.sum(self.squared_errors()) / total_sum_squares))
 
     def adjusted_r2_score(self, num_features):
+        """Use for linear-style models when comparing models with different feature counts."""
         sample_count = self.y_true.size
 
         if sample_count <= num_features + 1:
@@ -184,6 +209,7 @@ class RegressionMeasures:
         return 1 - ((1 - r2) * (sample_count - 1) / (sample_count - num_features - 1))
 
     def explained_variance_score(self):
+        """Use to measure how much variance remains after prediction errors."""
         error_values = self.errors()
         error_variance = np.var(error_values)
         true_variance = np.var(self.y_true)
@@ -195,6 +221,7 @@ class RegressionMeasures:
 
     # wape
     def weighted_absolute_percentage_error(self):
+        """Use for aggregate relative error, especially demand or volume forecasting."""
         denominator = np.sum(np.abs(self.y_true))
 
         if denominator == 0:
@@ -203,6 +230,7 @@ class RegressionMeasures:
         return float(np.sum(self.absolute_errors()) / denominator)
 
     def huber_loss(self, delta=1.0):
+        """Use when you want squared-error behavior with less sensitivity to outliers."""
         if delta <= 0:
             raise ValueError("delta must be greater than 0")
 
@@ -213,9 +241,11 @@ class RegressionMeasures:
         return float(np.mean(losses))
 
     def log_cosh_loss(self):
+        """Use as a smooth loss that behaves like MSE for small errors and MAE for large ones."""
         return float(np.mean(np.log(np.cosh(self.errors()))))
 
     def quantile_loss(self, quantile=0.5):
+        """Use for quantile regression or when under- and over-prediction costs differ."""
         if not 0 < quantile < 1:
             raise ValueError("quantile must be between 0 and 1")
 
@@ -224,6 +254,7 @@ class RegressionMeasures:
         return float(np.mean(losses))
 
     def theils_u(self):
+        """Use for time series forecasts to compare the model against a naive previous-value forecast."""
         if self.y_true.size < 2:
             raise ValueError("Theil's U requires at least two observations")
 
@@ -236,6 +267,7 @@ class RegressionMeasures:
         return float(model_rmse / naive_rmse)
 
     def mean_absolute_scaled_error(self):
+        """Use for time series forecasts when you need scale-free error versus a naive forecast."""
         if self.y_true.size < 2:
             raise ValueError("MASE requires at least two observations")
 
@@ -247,6 +279,7 @@ class RegressionMeasures:
         return float(self.mean_absolute_error() / naive_mae)
 
     def report(self):
+        """Use to get a compact summary of common regression metrics."""
         return {
             "mean_absolute_error": self.mean_absolute_error(),
             "mean_squared_error": self.mean_squared_error(),
